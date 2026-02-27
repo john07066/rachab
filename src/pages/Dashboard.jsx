@@ -13,7 +13,23 @@ export default function Dashboard() {
         navigate('/login');
     };
 
-    if (!profile) return null;
+    if (!profile) {
+        return (
+            <div className="container flex-center" style={{ minHeight: '100vh', flexDirection: 'column', gap: '1.5rem', textAlign: 'center' }}>
+                <div style={{
+                    width: '40px', height: '40px', border: '4px solid var(--glass-border)',
+                    borderTopColor: 'var(--primary)', borderRadius: '50%', animation: 'spin 1s linear infinite'
+                }}></div>
+                <div>
+                    <h3 style={{ marginBottom: '0.5rem' }}>Loading Dashboard...</h3>
+                    <p style={{ color: 'var(--text-muted)' }}>Fetching your profile details.</p>
+                </div>
+                <button onClick={handleSignOut} className="btn btn-secondary" style={{ marginTop: '1rem' }}>
+                    <LogOut size={16} /> Sign Out
+                </button>
+            </div>
+        );
+    }
 
     return (
         <div className="container" style={{ paddingTop: '3rem', paddingBottom: '3rem' }}>

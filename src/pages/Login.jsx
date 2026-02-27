@@ -32,8 +32,8 @@ export default function Login() {
 
             if (authError) throw authError;
 
-            // Navigate to dashboard 
-            navigate('/dashboard');
+            // Navigate via force-reload to ensure AuthContext fetches the session and profile correctly
+            window.location.href = '/dashboard';
 
         } catch (err) {
             setError(err.message || 'Invalid login credentials.');

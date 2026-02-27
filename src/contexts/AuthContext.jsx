@@ -12,14 +12,18 @@ export const AuthProvider = ({ children }) => {
         // Get initial session
         supabase.auth.getSession().then(({ data: { session } }) => {
             setUser(session?.user ?? null);
-            if (session?.user) fetchProfile(session.user.id);
-            else setLoading(false);
+            if (session?.user) {
+                fetchProfile(session.user.id);
+            } else {
+                setLoading(false);
+            }
         });
 
         // Listen for auth changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             setUser(session?.user ?? null);
             if (session?.user) {
+                setLoading(true);
                 fetchProfile(session.user.id);
             } else {
                 setProfile(null);
@@ -40,9 +44,14 @@ export const AuthProvider = ({ children }) => {
 
             if (!error && data) {
                 setProfile(data);
+            } else {
+                console.error('Failed to load profile:', error);
+                // If profile doesn't exist, we should clear it
+                setProfile(null);
             }
         } catch (err) {
             console.error('Error fetching profile:', err);
+            setProfile(null);
         } finally {
             setLoading(false);
         }
