@@ -58,20 +58,17 @@ function App() {
             </ProtectedRoute>
           } />
 
-          <Route path="/admin/*" element={
+          <Route path="/admin" element={
             <ProtectedRoute requireAdmin={true}>
-              <AdminLayout>
-                <Routes>
-                  <Route index element={<AdminDashboard />} />
-                  <Route path="members" element={<AdminMembers />} />
-                  <Route path="first-timers" element={<AdminMembers firstTimersOnly={true} />} />
-                  <Route path="manual" element={<AdminManualEntry />} />
-                  <Route path="scan" element={<AdminScanner />} />
-                  {/* Additional admin routes will go here */}
-                </Routes>
-              </AdminLayout>
+              <AdminLayout />
             </ProtectedRoute>
-          } />
+          }>
+            <Route index element={<AdminDashboard />} />
+            <Route path="members" element={<AdminMembers />} />
+            <Route path="first-timers" element={<AdminMembers firstTimersOnly={true} />} />
+            <Route path="manual" element={<AdminManualEntry />} />
+            <Route path="scan" element={<AdminScanner />} />
+          </Route>
         </Routes>
       </BrowserRouter>
     </AuthProvider>
