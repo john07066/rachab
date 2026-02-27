@@ -61,7 +61,7 @@ export const AuthProvider = ({ children }) => {
 
                         const { data: newProfile, error: insertError } = await supabase
                             .from('profiles')
-                            .insert([{
+                            .upsert([{
                                 id: userId,
                                 full_name: meta.full_name || 'Member',
                                 phone_number: meta.phone_number || '',
