@@ -69,8 +69,8 @@ export default function SignUp() {
                 setLoading(false);
                 return;
             } else {
-                // Navigate via force-reload to ensure AuthContext fetches the newly created profile
-                window.location.href = '/dashboard';
+                // Navigate via force-reload to root to route dynamically
+                window.location.href = '/';
             }
 
         } catch (err) {

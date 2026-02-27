@@ -32,8 +32,8 @@ export default function Login() {
 
             if (authError) throw authError;
 
-            // Navigate via force-reload to ensure AuthContext fetches the session and profile correctly
-            window.location.href = '/dashboard';
+            // Navigate via force-reload to the root, which will dynamically route to the correct dashboard based on admin status
+            window.location.href = '/';
 
         } catch (err) {
             setError(err.message || 'Invalid login credentials.');

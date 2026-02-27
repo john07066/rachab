@@ -24,12 +24,26 @@ const ProtectedRoute = ({ children, requireAdmin }) => {
   return children;
 };
 
+// Root Redirect Component
+const RootRedirect = () => {
+  const { user, profile, loading } = useAuth();
+
+  if (loading) return <div className="container flex-center" style={{ minHeight: '100vh' }}>Loading...</div>;
+  if (!user) return <Navigate to="/login" replace />;
+
+  if (profile?.is_admin) {
+    return <Navigate to="/admin" replace />;
+  }
+
+  return <Navigate to="/dashboard" replace />;
+};
+
 function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/" element={<RootRedirect />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<SignUp />} />
 
