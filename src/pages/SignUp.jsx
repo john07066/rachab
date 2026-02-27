@@ -11,12 +11,12 @@ export default function SignUp() {
     const [showPassword, setShowPassword] = useState(false);
 
     const [formData, setFormData] = useState({
-        fullName: '',
-        phoneNumber: '',
+        full_name: '',
+        phone_number: '',
         email: '',
         password: '',
         chapter: '',
-        isFirstTimer: false
+        is_first_timer: false
     });
 
     const handleChange = (e) => {
@@ -40,10 +40,10 @@ export default function SignUp() {
                 password: formData.password,
                 options: {
                     data: {
-                        full_name: formData.fullName,
-                        phone_number: formData.phoneNumber,
+                        full_name: formData.full_name,
+                        phone_number: formData.phone_number,
                         chapter: formData.chapter,
-                        is_first_timer: formData.isFirstTimer,
+                        is_first_timer: formData.is_first_timer,
                     }
                 }
             });
@@ -63,11 +63,11 @@ export default function SignUp() {
                     .from('profiles')
                     .upsert({
                         id: authData.user.id,
-                        full_name: formData.fullName,
-                        phone_number: formData.phoneNumber,
+                        full_name: formData.full_name,
+                        phone_number: formData.phone_number,
                         email: formData.email,
                         chapter: formData.chapter,
-                        is_first_timer: formData.isFirstTimer,
+                        is_first_timer: formData.is_first_timer,
                         is_admin: false, // Default
                     });
 
@@ -119,9 +119,9 @@ export default function SignUp() {
                             <label>Full Name</label>
                             <input
                                 type="text"
-                                name="fullName"
+                                name="full_name"
                                 required
-                                value={formData.fullName}
+                                value={formData.full_name}
                                 onChange={handleChange}
                                 placeholder="John Doe"
                             />
@@ -143,9 +143,9 @@ export default function SignUp() {
                             <label>Phone Number</label>
                             <input
                                 type="tel"
-                                name="phoneNumber"
+                                name="phone_number"
                                 required
-                                value={formData.phoneNumber}
+                                value={formData.phone_number}
                                 onChange={handleChange}
                                 placeholder="+1 234 567 8900"
                             />
@@ -198,13 +198,13 @@ export default function SignUp() {
                         <div className="input-group" style={{ flexDirection: 'row', alignItems: 'center', gap: '0.8rem', marginTop: '1rem' }}>
                             <input
                                 type="checkbox"
-                                name="isFirstTimer"
-                                id="isFirstTimer"
-                                checked={formData.isFirstTimer}
+                                name="is_first_timer"
+                                id="is_first_timer"
+                                checked={formData.is_first_timer}
                                 onChange={handleChange}
                                 style={{ width: 'auto', accentColor: 'var(--primary)' }}
                             />
-                            <label htmlFor="isFirstTimer" style={{ cursor: 'pointer', margin: 0, color: 'var(--text-main)' }}>
+                            <label htmlFor="is_first_timer" style={{ cursor: 'pointer', margin: 0, color: 'var(--text-main)' }}>
                                 I am a first timer
                             </label>
                         </div>
