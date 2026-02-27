@@ -11,10 +11,11 @@ export const AuthProvider = ({ children }) => {
     useEffect(() => {
         // Get initial session
         supabase.auth.getSession().then(({ data: { session } }) => {
-            setUser(session?.user ?? null);
             if (session?.user) {
+                setUser(session.user);
                 fetchProfile(session.user.id);
             } else {
+                setUser(null);
                 setLoading(false);
             }
         });
@@ -47,21 +48,24 @@ export const AuthProvider = ({ children }) => {
             } else {
                 console.error('Failed to load profile:', error);
 
-                // If the profile doesn't exist (PGRST116 = 0 rows returned), let's heal it
+                // PGRST116 means 0 rows returned (profile doesn't exist)
                 if (error && error.code === 'PGRST116') {
-                    console.log('Attempting to self-heal and create missing profile from metadata...');
-                    const { data: sessionData } = await supabase.auth.getSession();
-                    const user = sessionData?.session?.user;
+                    console.log('Profile missing. Attempting to self-heal from metadata...');
 
-                    if (user && user.user_metadata) {
-                        const meta = user.user_metadata;
+                    // We already have the userId, let's try to get the session metadata
+                    const { data: sessionData } = await supabase.auth.getSession();
+                    const currentUser = sessionData?.session?.user;
+
+                    if (currentUser) {
+                        const meta = currentUser.user_metadata || {};
+
                         const { data: newProfile, error: insertError } = await supabase
                             .from('profiles')
                             .insert([{
                                 id: userId,
-                                full_name: meta.full_name || 'Unknown',
+                                full_name: meta.full_name || 'Member',
                                 phone_number: meta.phone_number || '',
-                                email: user.email,
+                                email: currentUser.email,
                                 chapter: meta.chapter || '',
                                 is_first_timer: meta.is_first_timer || false,
                                 is_admin: false
@@ -72,6 +76,7 @@ export const AuthProvider = ({ children }) => {
                         if (!insertError && newProfile) {
                             console.log('Successfully recreated profile!');
                             setProfile(newProfile);
+                            setLoading(false);
                             return;
                         } else {
                             console.error('Failed to self-heal profile:', insertError);
@@ -79,11 +84,12 @@ export const AuthProvider = ({ children }) => {
                     }
                 }
 
-                // If profile doesn't exist, we should clear it
+                // If heal fails or error wasn't PGRST116, clear profile and end loading
                 setProfile(null);
+                setLoading(false);
             }
         } catch (err) {
-            console.error('Error fetching profile:', err);
+            console.error('Unexpected error fetching profile:', err);
             setProfile(null);
         } finally {
             setLoading(false);

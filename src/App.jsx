@@ -31,6 +31,11 @@ const RootRedirect = () => {
   if (loading) return <div className="container flex-center" style={{ minHeight: '100vh' }}>Loading...</div>;
   if (!user) return <Navigate to="/login" replace />;
 
+  if (user && !profile) {
+    // Edge case: user exists in Auth but profile generation completely failed / RLS blocked
+    return <Navigate to="/dashboard" replace />;
+  }
+
   if (profile?.is_admin) {
     return <Navigate to="/admin" replace />;
   }
