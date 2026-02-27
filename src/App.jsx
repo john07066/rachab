@@ -58,7 +58,7 @@ function App() {
             </ProtectedRoute>
           } />
 
-          <Route path="/admin" element={
+          <Route path="/admin/*" element={
             <ProtectedRoute requireAdmin={true}>
               <AdminLayout>
                 <Routes>
