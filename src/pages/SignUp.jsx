@@ -34,10 +34,18 @@ export default function SignUp() {
         setSuccessMsg(null);
 
         try {
-            // 1. Sign up the user in Supabase Auth
+            // 1. Sign up the user in Supabase Auth, storing data in metadata just in case
             const { data: authData, error: authError } = await supabase.auth.signUp({
                 email: formData.email,
                 password: formData.password,
+                options: {
+                    data: {
+                        full_name: formData.fullName,
+                        phone_number: formData.phoneNumber,
+                        chapter: formData.chapter,
+                        is_first_timer: formData.isFirstTimer,
+                    }
+                }
             });
 
             if (authError) throw authError;
@@ -47,7 +55,10 @@ export default function SignUp() {
             // OR insert it if it doesn't exist yet. By default, auth.signUp doesn't create the profile unless we have a trigger.
             // We will insert/update the profile manually since we didn't define a trigger in schema.sql.
 
-            if (authData.user) {
+            // We will insert/update the profile manually since we didn't define a trigger in schema.sql.
+
+            if (authData.user && authData.session) {
+                // If we have a session, we are authorized to run an upsert
                 const { error: profileError } = await supabase
                     .from('profiles')
                     .upsert({
@@ -60,7 +71,7 @@ export default function SignUp() {
                         is_admin: false, // Default
                     });
 
-                if (profileError) throw profileError;
+                if (profileError) console.error("Profile upsert failed immediately:", profileError);
             }
 
             if (!authData.session) {

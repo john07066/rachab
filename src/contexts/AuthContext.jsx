@@ -46,6 +46,39 @@ export const AuthProvider = ({ children }) => {
                 setProfile(data);
             } else {
                 console.error('Failed to load profile:', error);
+
+                // If the profile doesn't exist (PGRST116 = 0 rows returned), let's heal it
+                if (error && error.code === 'PGRST116') {
+                    console.log('Attempting to self-heal and create missing profile from metadata...');
+                    const { data: sessionData } = await supabase.auth.getSession();
+                    const user = sessionData?.session?.user;
+
+                    if (user && user.user_metadata) {
+                        const meta = user.user_metadata;
+                        const { data: newProfile, error: insertError } = await supabase
+                            .from('profiles')
+                            .insert([{
+                                id: userId,
+                                full_name: meta.full_name || 'Unknown',
+                                phone_number: meta.phone_number || '',
+                                email: user.email,
+                                chapter: meta.chapter || '',
+                                is_first_timer: meta.is_first_timer || false,
+                                is_admin: false
+                            }])
+                            .select()
+                            .single();
+
+                        if (!insertError && newProfile) {
+                            console.log('Successfully recreated profile!');
+                            setProfile(newProfile);
+                            return;
+                        } else {
+                            console.error('Failed to self-heal profile:', insertError);
+                        }
+                    }
+                }
+
                 // If profile doesn't exist, we should clear it
                 setProfile(null);
             }
