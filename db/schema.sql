@@ -39,12 +39,3 @@ create table if not exists exports (
   payload jsonb not null,
   exported_at timestamptz not null default now()
 );
-
-create table if not exists render_jobs (
-  id text primary key,
-  status text not null,
-  urls jsonb not null,
-  results jsonb not null default '[]'::jsonb,
-  created_at timestamptz not null default now(),
-  completed_at timestamptz
-);

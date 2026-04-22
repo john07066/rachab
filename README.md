@@ -2,23 +2,16 @@
 
 A full-stack platform for extracting viral short-form clips from long-form content in the **wealth, mindset, and ultra-wealth psychology** niche.
 
-## Stack
+## What is now finished
 
-- API/worker: Node + Express
-- AI copy generation: Groq (optional via `GROQ_API_KEY`)
-- Persistence: Supabase (optional via REST env vars)
-- Rendering: `yt-dlp` + `ffmpeg`
+- YouTube URL analysis endpoint with best-effort transcript fetch fallback
+- Manual transcript ingestion endpoint for deterministic analysis
+- Viral scoring for 5-7 best moments
+- Auto-generated title, hook, caption, emotion, and viral rationale
+- Review/approval UX and export payload generation
+- SQL schema baseline for videos/transcripts/clips
 
-## Features
-
-- Generate up to 10 clip candidates per video
-- Clip duration normalization to 20–59 seconds
-- Viral title/hook/caption/description generation (Groq-backed with fallback)
-- Batch queue processing (`POST /api/batch`)
-- Render with subtitles and aspect ratio options (`9:16`, `16:9`)
-- Auto b-roll style motion effect toggle
-
-## Local quick start
+## Quick start
 
 ```bash
 npm install
@@ -28,42 +21,15 @@ npm run dev
 - Web app: `http://localhost:5173`
 - API: `http://localhost:8787`
 
-## Railway deployment (single service: frontend + backend)
-
-This repo is Docker-ready for Railway. The `Dockerfile`:
-- installs `ffmpeg` + `yt-dlp`
-- installs dependencies
-- builds the Vite frontend
-- runs the Express server that also serves `dist/`
-
-### Railway environment variables
-
-Set these in Railway (do not commit them):
-
-- `GROQ_API_KEY`
-- `GROQ_MODEL` (optional; default `llama-3.1-8b-instant`)
-- `SUPABASE_URL`
-- `SUPABASE_SERVICE_ROLE_KEY` (recommended)
-- `SUPABASE_ANON_KEY` (optional)
-- `PORT` (Railway usually sets this automatically)
-
-> Security: if keys were ever shared publicly, rotate them immediately in provider dashboards.
-
 ## API
 
-- `POST /api/analyze-video`
-- `POST /api/analyze-transcript`
-- `POST /api/batch`
-- `GET /api/jobs/:jobId`
+- `POST /api/analyze-video` with `{ "url": "..." }`
+- `POST /api/analyze-transcript` with `{ "title": "...", "text": "line1\nline2" }`
 - `GET /api/videos/:videoId/clips`
 - `POST /api/clips/:clipId/approve`
 - `POST /api/export/:videoId`
-- `POST /api/render/:videoId` body example:
 
-```json
-{
-  "aspectRatio": "9:16",
-  "burnSubtitles": true,
-  "autoBroll": true
-}
-```
+## Notes
+
+- Transcript fetch from YouTube is a best-effort call and may fail for private videos or regional blocks.
+- Use manual transcript mode when you need guaranteed analysis behavior.

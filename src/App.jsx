@@ -1,14 +1,5 @@
 import { useState } from 'react';
-import {
-  analyzeTranscript,
-  analyzeVideo,
-  approveClip,
-  enqueueBatch,
-  exportVideo,
-  fetchClips,
-  getBatchJob,
-  renderVideo
-} from './lib/api.js';
+import { analyzeTranscript, analyzeVideo, approveClip, exportVideo, fetchClips } from './lib/api.js';
 import { ClipList } from './components/ClipList.jsx';
 
 export function App() {

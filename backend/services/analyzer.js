@@ -1,5 +1,4 @@
 import { getTranscriptForVideo, transcriptFromText } from './transcript.js';
-import { generateClipCopyWithGroq } from './groq.js';
 
 const emotionLexicon = {
   shock: ['lost', 'never', 'poor', 'pain', 'collapse', 'broke'],
@@ -8,10 +7,6 @@ const emotionLexicon = {
   revelation: ['secret', 'hidden', 'disguise', 'thermostat', 'truth'],
   motivation: ['before', 'start', 'scale', 'ambition', 'daily']
 };
-
-const MIN_CLIP_DURATION = 20;
-const MAX_CLIP_DURATION = 59;
-const DEFAULT_CLIP_COUNT = 10;
 
 export function createAnalyzerService() {
   const store = new Map();
@@ -29,12 +24,12 @@ export function createAnalyzerService() {
   return {
     async analyze(url) {
       const { video, segments } = await getTranscriptForVideo(url);
-      const clips = await generateClips(segments, video.id);
+      const clips = generateClips(segments, video.id);
       return saveVideo(video, clips);
     },
-    async analyzeTranscript(input) {
+    analyzeTranscript(input) {
       const { video, segments } = transcriptFromText(input);
-      const clips = await generateClips(segments, video.id);
+      const clips = generateClips(segments, video.id);
       return saveVideo(video, clips);
     },
     getVideo(videoId) {
@@ -42,10 +37,15 @@ export function createAnalyzerService() {
     },
     approveClip(clipId) {
       const ref = clipIndex.get(clipId);
-      if (!ref) throw new Error('Clip not found');
+      if (!ref) {
+        throw new Error('Clip not found');
+      }
+
       const video = store.get(ref.videoId);
       const clip = video?.clips.find((item) => item.id === ref.clipId);
-      if (!clip) throw new Error('Clip not found');
+      if (!clip) {
+        throw new Error('Clip not found');
+      }
       clip.status = 'approved';
       return clip;
     },
@@ -90,39 +90,28 @@ async function buildClip(segment, videoId) {
   return {
     id: randomId(),
     videoId,
-    timestamp: `${formatSecond(normalized.start)} → ${formatSecond(normalized.end)}`,
-    startSecond: normalized.start,
-    endSecond: normalized.end,
+    timestamp: `${formatSecond(segment.start)} → ${formatSecond(segment.end)}`,
+    startSecond: segment.start,
+    endSecond: segment.end,
     viralScore: score,
-    ...packaged,
+    title,
+    hook: createHook(segment.text, title),
+    caption: createCaption(segment.text),
+    emotion,
+    rationale: createRationale(segment.text, amounts),
     status: 'pending'
   };
-}
-
-function normalizeDuration(start, end) {
-  let clipStart = Math.max(0, Math.floor(start));
-  let clipEnd = Math.max(clipStart + 1, Math.ceil(end));
-  let duration = clipEnd - clipStart;
-
-  if (duration < MIN_CLIP_DURATION) {
-    clipEnd = clipStart + MIN_CLIP_DURATION;
-    duration = MIN_CLIP_DURATION;
-  }
-
-  if (duration > MAX_CLIP_DURATION) {
-    clipEnd = clipStart + MAX_CLIP_DURATION;
-  }
-
-  return { start: clipStart, end: clipEnd };
 }
 
 export function scoreSegment(text) {
   const value = text.toLowerCase();
   let score = 4;
+
   if (/\$\s?\d+|million|billion|cash flow|net worth/.test(value)) score += 3;
   if (/most people|never|wrong|mock|opposite/.test(value)) score += 1;
   if (/lost|pain|secret|hidden|thermostat|truth/.test(value)) score += 1;
   if (/deep work|discipline|morning|environment|focus/.test(value)) score += 1;
+
   return Math.max(1, Math.min(10, score));
 }
 
@@ -130,6 +119,7 @@ function detectEmotion(text) {
   const value = text.toLowerCase();
   let best = 'motivation';
   let maxHits = -1;
+
   for (const [emotion, keywords] of Object.entries(emotionLexicon)) {
     const hits = keywords.filter((keyword) => value.includes(keyword)).length;
     if (hits > maxHits) {
@@ -137,6 +127,7 @@ function detectEmotion(text) {
       best = emotion;
     }
   }
+
   return capitalize(best);
 }
 
@@ -144,13 +135,15 @@ function createTitle(text, amounts) {
   if (amounts.length) return `He Lost ${amounts[0]} and Said THIS...`;
   if (text.toLowerCase().includes('most people')) return 'The #1 Reason Poor People Stay Poor';
   if (text.toLowerCase().includes('morning')) return 'Billionaires Do THIS Every Morning';
+  if (text.toLowerCase().includes('self-image')) return 'Your Income Follows THIS Hidden Thermostat';
   return 'What the Ultra-Wealthy Know That You Don’t';
 }
 
-function createHook(text) {
+function createHook(text, title) {
   if (text.toLowerCase().includes('most people')) return 'Most people will never be rich because...';
   if (text.toLowerCase().includes('lost')) return 'He lost everything and then did THIS...';
-  return 'The wealth psychology nobody teaches...';
+  if (text.toLowerCase().includes('secret')) return 'The #1 wealth secret billionaires hide...';
+  return `${title.slice(0, 45)}...`;
 }
 
 function createCaption(text) {
@@ -158,9 +151,13 @@ function createCaption(text) {
 }
 
 function createRationale(text, amounts) {
-  if (amounts.length) return 'Specific dollar references plus emotional stakes create stop-scroll attention.';
-  if (/most people|poor/.test(text.toLowerCase())) return 'Contrarian framing triggers debate and comments.';
-  return 'A concise mindset one-liner with authority tone drives retention.';
+  if (amounts.length) {
+    return 'Specific dollar references plus emotional stakes create immediate stop-scroll attention.';
+  }
+  if (/most people|poor/.test(text.toLowerCase())) {
+    return 'Contrarian framing triggers debate, comments, and replay value.';
+  }
+  return 'A concise mindset one-liner with authority tone drives high short-form retention.';
 }
 
 function extractMoneyClaims(text) {
@@ -175,7 +172,6 @@ function formatSecond(total) {
 }
 
 function capitalize(value) {
-  if (!value) return 'Motivation';
   return value[0].toUpperCase() + value.slice(1);
 }
 

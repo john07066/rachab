@@ -10,18 +10,22 @@ test('scoreSegment rewards money-specific and contrarian statements', () => {
   assert.ok(high >= 8);
 });
 
-test('manual transcript analysis returns <=10 clips in 20-59 second windows', async () => {
+test('manual transcript analysis returns 5-7 clips', () => {
   const analyzer = createAnalyzerService();
-  const result = await analyzer.analyzeTranscript({
+  const result = analyzer.analyzeTranscript({
     title: 'Demo',
-    text: Array.from({ length: 12 }, (_, i) => `Most people ignore lesson ${i + 1} about money and focus.`).join('\n')
+    text: [
+      'Most people stay poor because they chase status.',
+      'I lost 12 million and rebuilt from scratch.',
+      'Billionaires buy time first and protect focus.',
+      'Your self-image controls your income ceiling.',
+      'Cash flow discipline beats ego spending.',
+      'Your environment can tax your ambition.',
+      'The morning deep work block changes everything.',
+      'Master one income engine before scaling.'
+    ].join('\n')
   });
 
-  assert.ok(result.clips.length <= 10);
+  assert.ok(result.clips.length >= 5 && result.clips.length <= 7);
   assert.equal(result.video.title, 'Demo');
-
-  for (const clip of result.clips) {
-    const duration = clip.endSecond - clip.startSecond;
-    assert.ok(duration >= 20 && duration <= 59);
-  }
 });
