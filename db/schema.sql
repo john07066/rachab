@@ -31,3 +31,11 @@ create table if not exists clip_candidates (
   status text not null default 'pending',
   created_at timestamptz not null default now()
 );
+
+create table if not exists exports (
+  id bigserial primary key,
+  video_id text not null references videos(id) on delete cascade,
+  approved_count integer not null,
+  payload jsonb not null,
+  exported_at timestamptz not null default now()
+);

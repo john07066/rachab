@@ -7,7 +7,7 @@ const port = process.env.PORT || 8787;
 const analyzer = createAnalyzerService();
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '2mb' }));
 
 app.get('/api/health', (_req, res) => {
   res.json({ ok: true, name: 'elite-ai-video-clipper-api' });
@@ -17,6 +17,16 @@ app.post('/api/analyze-video', async (req, res) => {
   try {
     const { url } = req.body;
     const result = await analyzer.analyze(url);
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+app.post('/api/analyze-transcript', (req, res) => {
+  try {
+    const { text, title } = req.body;
+    const result = analyzer.analyzeTranscript({ text, title });
     res.json(result);
   } catch (error) {
     res.status(400).json({ message: error.message });

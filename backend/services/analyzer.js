@@ -1,37 +1,36 @@
-import { getTranscriptForVideo } from './transcript.js';
+import { getTranscriptForVideo, transcriptFromText } from './transcript.js';
 
 const emotionLexicon = {
-  shock: ['lost', 'never', 'poor', 'pain'],
-  inspiration: ['taught', 'master', 'deep work', 'discipline'],
-  controversy: ['most people', 'wrong', 'mock'],
-  revelation: ['secret', 'hidden', 'disguise', 'thermostat'],
-  motivation: ['before', 'start', 'scale', 'ambition']
+  shock: ['lost', 'never', 'poor', 'pain', 'collapse', 'broke'],
+  inspiration: ['taught', 'master', 'deep work', 'discipline', 'focus'],
+  controversy: ['most people', 'wrong', 'mock', 'nobody talks about'],
+  revelation: ['secret', 'hidden', 'disguise', 'thermostat', 'truth'],
+  motivation: ['before', 'start', 'scale', 'ambition', 'daily']
 };
 
 export function createAnalyzerService() {
   const store = new Map();
   const clipIndex = new Map();
 
+  function saveVideo(video, clips) {
+    const payload = { video, clips };
+    store.set(video.id, payload);
+    for (const clip of clips) {
+      clipIndex.set(clip.id, { videoId: video.id, clipId: clip.id });
+    }
+    return payload;
+  }
+
   return {
     async analyze(url) {
       const { video, segments } = await getTranscriptForVideo(url);
       const clips = generateClips(segments, video.id);
-      const payload = {
-        video: {
-          id: video.id,
-          title: video.title,
-          sourceUrl: video.sourceUrl,
-          durationSeconds: video.durationSeconds
-        },
-        clips
-      };
-
-      store.set(video.id, payload);
-      for (const clip of clips) {
-        clipIndex.set(clip.id, { videoId: video.id, clipId: clip.id });
-      }
-
-      return payload;
+      return saveVideo(video, clips);
+    },
+    analyzeTranscript(input) {
+      const { video, segments } = transcriptFromText(input);
+      const clips = generateClips(segments, video.id);
+      return saveVideo(video, clips);
     },
     getVideo(videoId) {
       return store.get(videoId) ?? null;
@@ -76,6 +75,8 @@ function generateClips(segments, videoId) {
 function buildClip(segment, videoId) {
   const score = scoreSegment(segment.text);
   const emotion = detectEmotion(segment.text);
+  const amounts = extractMoneyClaims(segment.text);
+  const title = createTitle(segment.text, amounts);
 
   return {
     id: randomId(),
@@ -84,23 +85,23 @@ function buildClip(segment, videoId) {
     startSecond: segment.start,
     endSecond: segment.end,
     viralScore: score,
-    title: createTitle(segment.text),
-    hook: createHook(segment.text),
+    title,
+    hook: createHook(segment.text, title),
     caption: createCaption(segment.text),
     emotion,
-    rationale: createRationale(segment.text),
+    rationale: createRationale(segment.text, amounts),
     status: 'pending'
   };
 }
 
 export function scoreSegment(text) {
   const value = text.toLowerCase();
-  let score = 5;
+  let score = 4;
 
-  if (/\$|million|billion|cash flow/.test(value)) score += 2;
-  if (/most people|never|wrong|mock/.test(value)) score += 1;
-  if (/lost|pain|secret|hidden|thermostat/.test(value)) score += 1;
-  if (/deep work|discipline|morning|environment/.test(value)) score += 1;
+  if (/\$\s?\d+|million|billion|cash flow|net worth/.test(value)) score += 3;
+  if (/most people|never|wrong|mock|opposite/.test(value)) score += 1;
+  if (/lost|pain|secret|hidden|thermostat|truth/.test(value)) score += 1;
+  if (/deep work|discipline|morning|environment|focus/.test(value)) score += 1;
 
   return Math.max(1, Math.min(10, score));
 }
@@ -121,31 +122,38 @@ function detectEmotion(text) {
   return capitalize(best);
 }
 
-function createTitle(text) {
-  if (text.includes('Most people')) return 'The #1 Reason Most People Stay Broke';
-  if (text.includes('billionaire')) return 'A Billionaire Told Him THIS About Time';
-  if (text.includes('lost 40 million')) return 'He Lost $40M and Learned This Rule';
-  if (text.includes('self-image')) return 'Your Income Follows THIS Hidden Thermostat';
-  return 'Ultra-Wealthy Habit Most People Ignore';
+function createTitle(text, amounts) {
+  if (amounts.length) return `He Lost ${amounts[0]} and Said THIS...`;
+  if (text.toLowerCase().includes('most people')) return 'The #1 Reason Poor People Stay Poor';
+  if (text.toLowerCase().includes('morning')) return 'Billionaires Do THIS Every Morning';
+  if (text.toLowerCase().includes('self-image')) return 'Your Income Follows THIS Hidden Thermostat';
+  return 'What the Ultra-Wealthy Know That You Don’t';
 }
 
-function createHook(text) {
-  if (text.includes('Most people')) return 'Most people will never be rich because...';
-  if (text.includes('lost 40 million')) return 'He lost $40M and this changed everything...';
-  if (text.includes('self-image')) return 'Your money ceiling is in your mind...';
-  return 'Billionaires think about money differently...';
+function createHook(text, title) {
+  if (text.toLowerCase().includes('most people')) return 'Most people will never be rich because...';
+  if (text.toLowerCase().includes('lost')) return 'He lost everything and then did THIS...';
+  if (text.toLowerCase().includes('secret')) return 'The #1 wealth secret billionaires hide...';
+  return `${title.slice(0, 45)}...`;
 }
 
 function createCaption(text) {
-  return `Wealth is a psychology game before it is a money game 💸\n\n${text}\n\nMost people ignore this and wonder why income stalls.\nShift identity, environment, and focus — then results follow.\n\nDo you agree with this take? 👇\n\n#wealth #mindset #billionaire #success #motivation #money #rich #entrepreneur #financialfreedom #hustle`;
+  return `Wealth is built in your mind before your bank account 💰\n\n${text}\n\nBillionaires think in leverage, time, and identity.\nMost people stay stuck chasing appearance over assets.\nChange your default patterns and results follow.\n\nWhat part hit you the hardest? 👇\n\n#wealth #mindset #billionaire #success #motivation #money #rich #entrepreneur #financialfreedom #hustle`;
 }
 
-function createRationale(text) {
-  if (/lost|million|billion/.test(text.toLowerCase())) {
-    return 'Specific money claims plus pain-driven lessons trigger high retention and comments.';
+function createRationale(text, amounts) {
+  if (amounts.length) {
+    return 'Specific dollar references plus emotional stakes create immediate stop-scroll attention.';
   }
+  if (/most people|poor/.test(text.toLowerCase())) {
+    return 'Contrarian framing triggers debate, comments, and replay value.';
+  }
+  return 'A concise mindset one-liner with authority tone drives high short-form retention.';
+}
 
-  return 'Contrarian framing with a clean one-liner creates stop-scroll momentum and shareability.';
+function extractMoneyClaims(text) {
+  const matches = text.match(/\$\s?\d+[\d,.]*\s?[MBK]?|\d+[\d,.]*\s?(million|billion)/gi);
+  return matches ? matches.slice(0, 2) : [];
 }
 
 function formatSecond(total) {

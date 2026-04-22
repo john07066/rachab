@@ -19,6 +19,13 @@ export function analyzeVideo(url) {
   });
 }
 
+export function analyzeTranscript(text, title) {
+  return request('/api/analyze-transcript', {
+    method: 'POST',
+    body: JSON.stringify({ text, title })
+  });
+}
+
 export function fetchClips(videoId) {
   return request(`/api/videos/${videoId}/clips`);
 }

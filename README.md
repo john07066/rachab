@@ -1,15 +1,15 @@
 # Elite AI Video Clipper
 
-A full-stack platform for extracting viral short-form clips from long-form YouTube content focused on **wealth, mindset, and psychology of the ultra-wealthy**.
+A full-stack platform for extracting viral short-form clips from long-form content in the **wealth, mindset, and ultra-wealth psychology** niche.
 
-## Features
+## What is now finished
 
-- YouTube URL intake + transcript ingestion (stubbed with local parsing helper)
-- Niche-aware viral scoring engine
-- Auto-generated titles, hooks, captions, emotion labels, and rationale
-- Ranked clip candidates with review actions
-- JSON export for posting pipelines
-- REST API + React dashboard
+- YouTube URL analysis endpoint with best-effort transcript fetch fallback
+- Manual transcript ingestion endpoint for deterministic analysis
+- Viral scoring for 5-7 best moments
+- Auto-generated title, hook, caption, emotion, and viral rationale
+- Review/approval UX and export payload generation
+- SQL schema baseline for videos/transcripts/clips
 
 ## Quick start
 
@@ -23,11 +23,13 @@ npm run dev
 
 ## API
 
-- `POST /api/analyze-video`
+- `POST /api/analyze-video` with `{ "url": "..." }`
+- `POST /api/analyze-transcript` with `{ "title": "...", "text": "line1\nline2" }`
 - `GET /api/videos/:videoId/clips`
 - `POST /api/clips/:clipId/approve`
 - `POST /api/export/:videoId`
 
-## Database
+## Notes
 
-See `db/schema.sql` for production-ready schema baseline.
+- Transcript fetch from YouTube is a best-effort call and may fail for private videos or regional blocks.
+- Use manual transcript mode when you need guaranteed analysis behavior.

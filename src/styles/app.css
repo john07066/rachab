@@ -28,15 +28,30 @@ body {
   gap: 0.5rem;
 }
 
-input, button {
+.modeRow button {
+  background: #1b2650;
+}
+
+.modeRow .active {
+  background: #4668ff;
+}
+
+input, textarea, button {
   font: inherit;
   padding: 0.65rem 0.8rem;
   border-radius: 8px;
   border: 1px solid #32427c;
+  margin-bottom: 0.75rem;
+  width: 100%;
+}
+
+textarea {
+  resize: vertical;
+  background: #101733;
+  color: #fff;
 }
 
 input {
-  flex: 1;
   background: #101733;
   color: #fff;
 }
@@ -45,6 +60,7 @@ button {
   background: #4668ff;
   color: white;
   cursor: pointer;
+  width: auto;
 }
 
 .clipList {
