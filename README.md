@@ -1,16 +1,69 @@
-# React + Vite
+# Elite AI Video Clipper
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A full-stack platform for extracting viral short-form clips from long-form content in the **wealth, mindset, and ultra-wealth psychology** niche.
 
-Currently, two official plugins are available:
+## Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- API/worker: Node + Express
+- AI copy generation: Groq (optional via `GROQ_API_KEY`)
+- Persistence: Supabase (optional via REST env vars)
+- Rendering: `yt-dlp` + `ffmpeg`
 
-## React Compiler
+## Features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- Generate up to 10 clip candidates per video
+- Clip duration normalization to 20–59 seconds
+- Viral title/hook/caption/description generation (Groq-backed with fallback)
+- Batch queue processing (`POST /api/batch`)
+- Render with subtitles and aspect ratio options (`9:16`, `16:9`)
+- Auto b-roll style motion effect toggle
 
-## Expanding the ESLint configuration
+## Local quick start
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```bash
+npm install
+npm run dev
+```
+
+- Web app: `http://localhost:5173`
+- API: `http://localhost:8787`
+
+## Railway deployment (single service: frontend + backend)
+
+This repo is Docker-ready for Railway. The `Dockerfile`:
+- installs `ffmpeg` + `yt-dlp`
+- installs dependencies
+- builds the Vite frontend
+- runs the Express server that also serves `dist/`
+
+### Railway environment variables
+
+Set these in Railway (do not commit them):
+
+- `GROQ_API_KEY`
+- `GROQ_MODEL` (optional; default `llama-3.1-8b-instant`)
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY` (recommended)
+- `SUPABASE_ANON_KEY` (optional)
+- `PORT` (Railway usually sets this automatically)
+
+> Security: if keys were ever shared publicly, rotate them immediately in provider dashboards.
+
+## API
+
+- `POST /api/analyze-video`
+- `POST /api/analyze-transcript`
+- `POST /api/batch`
+- `GET /api/jobs/:jobId`
+- `GET /api/videos/:videoId/clips`
+- `POST /api/clips/:clipId/approve`
+- `POST /api/export/:videoId`
+- `POST /api/render/:videoId` body example:
+
+```json
+{
+  "aspectRatio": "9:16",
+  "burnSubtitles": true,
+  "autoBroll": true
+}
+```
