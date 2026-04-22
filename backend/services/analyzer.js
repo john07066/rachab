@@ -51,32 +51,41 @@ export function createAnalyzerService() {
     },
     exportApproved(videoId) {
       const video = store.get(videoId);
-      if (!video) {
-        throw new Error('Video not found');
-      }
+      if (!video) throw new Error('Video not found');
 
       const approvedClips = video.clips.filter((clip) => clip.status === 'approved');
-      return {
-        video: video.video,
-        approvedCount: approvedClips.length,
-        clips: approvedClips
-      };
+      return { video: video.video, approvedCount: approvedClips.length, clips: approvedClips };
     }
   };
 }
 
-function generateClips(segments, videoId) {
-  return segments
-    .map((segment) => buildClip(segment, videoId))
-    .sort((a, b) => b.viralScore - a.viralScore)
-    .slice(0, 7);
+async function generateClips(segments, videoId) {
+  const candidates = await Promise.all(segments.map((segment) => buildClip(segment, videoId)));
+  return candidates.sort((a, b) => b.viralScore - a.viralScore).slice(0, DEFAULT_CLIP_COUNT);
 }
 
-function buildClip(segment, videoId) {
+async function buildClip(segment, videoId) {
+  const normalized = normalizeDuration(segment.start, segment.end);
   const score = scoreSegment(segment.text);
   const emotion = detectEmotion(segment.text);
   const amounts = extractMoneyClaims(segment.text);
-  const title = createTitle(segment.text, amounts);
+
+  const fallback = {
+    title: createTitle(segment.text, amounts),
+    hook: createHook(segment.text),
+    caption: createCaption(segment.text),
+    emotion,
+    rationale: createRationale(segment.text, amounts)
+  };
+
+  const ai = await generateClipCopyWithGroq({ text: segment.text });
+  const packaged = {
+    title: ai?.title?.slice(0, 60) || fallback.title,
+    hook: ai?.hook || fallback.hook,
+    caption: ai?.caption || fallback.caption,
+    emotion: capitalize((ai?.emotion || fallback.emotion).toLowerCase()),
+    rationale: ai?.rationale || fallback.rationale
+  };
 
   return {
     id: randomId(),
