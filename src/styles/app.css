@@ -1,0 +1,73 @@
+:root {
+  color-scheme: dark;
+  font-family: Inter, system-ui, sans-serif;
+}
+
+body {
+  margin: 0;
+  background: #0b1020;
+  color: #f3f5ff;
+}
+
+.page {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 2rem 1rem 4rem;
+}
+
+.panel {
+  background: #131c38;
+  border: 1px solid #2a3768;
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+input, button {
+  font: inherit;
+  padding: 0.65rem 0.8rem;
+  border-radius: 8px;
+  border: 1px solid #32427c;
+}
+
+input {
+  flex: 1;
+  background: #101733;
+  color: #fff;
+}
+
+button {
+  background: #4668ff;
+  color: white;
+  cursor: pointer;
+}
+
+.clipList {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.clipList li {
+  border: 1px solid #2a3768;
+  border-radius: 10px;
+  padding: 0.75rem;
+}
+
+pre {
+  background: #0d142a;
+  border-radius: 8px;
+  padding: 0.75rem;
+  white-space: pre-wrap;
+}
+
+.high { color: #60fca2; }
+.medium { color: #ffcf63; }
+.low { color: #ff8a8a; }
+.error { color: #ff8a8a; }

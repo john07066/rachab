@@ -1,78 +1,83 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { supabase } from './lib/supabase';
+import { useState } from 'react';
+import { analyzeVideo, approveClip, exportVideo, fetchClips } from './lib/api.js';
+import { ClipList } from './components/ClipList.jsx';
 
-import Login from './pages/Login';
-import SignUp from './pages/SignUp';
+export function App() {
+  const [url, setUrl] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [video, setVideo] = useState(null);
+  const [clips, setClips] = useState([]);
+  const [error, setError] = useState('');
+  const [exportJson, setExportJson] = useState('');
 
-import Dashboard from './pages/Dashboard';
+  async function handleAnalyze(event) {
+    event.preventDefault();
+    setLoading(true);
+    setError('');
+    setExportJson('');
 
-import AdminLayout from './components/AdminLayout';
-import AdminDashboard from './pages/AdminDashboard';
-import AdminMembers from './pages/AdminMembers';
-import AdminManualEntry from './pages/AdminManualEntry';
-import AdminScanner from './pages/AdminScanner';
-
-// Protected Route Wrapper
-const ProtectedRoute = ({ children, requireAdmin }) => {
-  const { user, profile, loading } = useAuth();
-
-  if (loading) return <div className="container flex-center" style={{ minHeight: '100vh' }}>Loading...</div>;
-  if (!user) return <Navigate to="/login" replace />;
-  if (requireAdmin && profile && !profile.is_admin) return <Navigate to="/dashboard" replace />;
-
-  return children;
-};
-
-// Root Redirect Component
-const RootRedirect = () => {
-  const { user, profile, loading } = useAuth();
-
-  if (loading) return <div className="container flex-center" style={{ minHeight: '100vh' }}>Loading...</div>;
-  if (!user) return <Navigate to="/login" replace />;
-
-  if (user && !profile) {
-    // Edge case: user exists in Auth but profile generation completely failed / RLS blocked
-    return <Navigate to="/dashboard" replace />;
+    try {
+      const result = await analyzeVideo(url);
+      setVideo(result.video);
+      setClips(result.clips);
+    } catch (analyzeError) {
+      setError(analyzeError.message);
+    } finally {
+      setLoading(false);
+    }
   }
 
-  if (profile?.is_admin) {
-    return <Navigate to="/admin" replace />;
+  async function refreshClips(videoId) {
+    const result = await fetchClips(videoId);
+    setClips(result.clips);
   }
 
-  return <Navigate to="/dashboard" replace />;
-};
+  async function handleApprove(clipId) {
+    if (!video) return;
+    await approveClip(clipId);
+    await refreshClips(video.id);
+  }
 
-function App() {
+  async function handleExport() {
+    if (!video) return;
+    const data = await exportVideo(video.id);
+    setExportJson(JSON.stringify(data, null, 2));
+  }
+
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<RootRedirect />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<SignUp />} />
+    <main className="page">
+      <header>
+        <h1>Elite AI Video Clipper</h1>
+        <p>Find the most viral Wealth/Mindset moments for Shorts, Reels, and TikTok.</p>
+      </header>
 
-          <Route path="/dashboard" element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          } />
+      <form onSubmit={handleAnalyze} className="panel">
+        <label htmlFor="videoUrl">YouTube URL</label>
+        <div className="row">
+          <input
+            id="videoUrl"
+            type="url"
+            value={url}
+            onChange={(event) => setUrl(event.target.value)}
+            placeholder="https://www.youtube.com/watch?v=..."
+            required
+          />
+          <button type="submit" disabled={loading}>{loading ? 'Analyzing…' : 'Analyze Video'}</button>
+        </div>
+      </form>
 
-          <Route path="/admin" element={
-            <ProtectedRoute requireAdmin={true}>
-              <AdminLayout />
-            </ProtectedRoute>
-          }>
-            <Route index element={<AdminDashboard />} />
-            <Route path="members" element={<AdminMembers />} />
-            <Route path="first-timers" element={<AdminMembers firstTimersOnly={true} />} />
-            <Route path="manual" element={<AdminManualEntry />} />
-            <Route path="scan" element={<AdminScanner />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+      {error && <p className="error">{error}</p>}
+
+      {video && (
+        <section className="panel">
+          <h2>{video.title}</h2>
+          <p>Video ID: <code>{video.id}</code></p>
+          <button onClick={handleExport}>Export Approved Clips</button>
+          {exportJson && <pre>{exportJson}</pre>}
+        </section>
+      )}
+
+      <ClipList clips={clips} onApprove={handleApprove} />
+    </main>
   );
 }
-
-export default App;
